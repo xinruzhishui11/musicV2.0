@@ -5,16 +5,16 @@ import java.util.List;
 import android.app.Application;
 
 public class MusicPlayerApplication extends Application {
-	private List<Music> data;
+	private List<Music> musics;
 	
 	
 	@Override
 	public void onCreate() {
 		IDAO<Music> dao=MusicPlayerFarctory.getInstance();
-		dao.getData();
+		musics=dao.getData();
 	}
 	
-	public List<Music> getData(){
-		return data;
+	public List<Music> getMusics(){
+		return musics;
 	}
 }
