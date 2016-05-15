@@ -22,6 +22,7 @@ import android.widget.AdapterView.OnItemClickListener;
 import android.widget.ImageButton;
 import android.widget.ListView;
 import android.widget.SeekBar;
+import android.widget.SeekBar.OnSeekBarChangeListener;
 import android.widget.TextView;
 
 public class MainActivity extends Activity implements OnClickListener{
@@ -76,6 +77,35 @@ public class MainActivity extends Activity implements OnClickListener{
 		// 给ListView添加适配器
 		musicAdapter = new MusicAdapter(MainActivity.this, musics);
 		lvMusic.setAdapter(musicAdapter);
+		
+		Log.d("edu", "MainActivity.onCreate");
+		
+		
+		openNext();
+	}
+	
+	private void openNext() {
+		
+		if(player!=null){
+			if(player.autoPlayNext()){
+				final int currentMusicIndex=player.getCurrentMusicIndex();
+				runOnUiThread(new Runnable() {
+					
+					@Override
+					public void run() {
+						tvMusicTitle.setText(musics.get(currentMusicIndex).getTitle());
+						tvDuration.setText(dataFormatedTimer(player.getDuration()));
+					}
+				});
+			}
+		}
+	}
+
+	@Override
+	protected void onResume() {
+		
+		Log.d("edu", "MainActivity.onResume");
+		super.onResume();
 	}
 
 	private class InnerServiceConnection implements ServiceConnection {
@@ -89,6 +119,7 @@ public class MainActivity extends Activity implements OnClickListener{
 		@Override
 		public void onServiceDisconnected(ComponentName name) {
 			// 已经断开连接时调用该方法
+			
 		}
 
 	}
@@ -117,6 +148,40 @@ public class MainActivity extends Activity implements OnClickListener{
 		
 		OnItemClickListener listener = new InnerOnItemClickListener();
 		lvMusic.setOnItemClickListener(listener);
+		
+		//为seekBar设置监听器
+		OnSeekBarChangeListener sbListender = new InnerOnSeekBarChangeListener();
+		sbProgress.setOnSeekBarChangeListener(sbListender);
+	}
+	
+	
+	private boolean isTracking;
+	private class InnerOnSeekBarChangeListener implements OnSeekBarChangeListener{
+
+		@Override
+		public void onProgressChanged(SeekBar seekBar, int progress,
+				boolean fromUser) {
+			// 正在拖拽的时候调用
+			
+		}
+
+		@Override
+		public void onStartTrackingTouch(SeekBar seekBar) {
+			// 开始拖拽的时候调用
+			isTracking=true;
+		}
+
+		@Override
+		public void onStopTrackingTouch(SeekBar seekBar) {
+			// 结束的时候拖拽
+			int progress=sbProgress.getProgress();
+			int duration=player.getDuration();
+			int currentPosition=duration*progress/100;
+			isTracking=false;
+			player.playFromCurrentPosition(currentPosition);
+			
+		}
+		
 	}
 	
 	private class InnerOnItemClickListener implements OnItemClickListener{
@@ -144,9 +209,6 @@ public class MainActivity extends Activity implements OnClickListener{
 			}else{
 				player.play();
 				showMusicInfo(player.getDuration());
-				
-				updataProgressThread=new UpdataProgressThread();
-				updataProgressThread.start();
 			}
 			break;
 		case R.id.ib_music_previous:
@@ -166,7 +228,11 @@ public class MainActivity extends Activity implements OnClickListener{
 		tvDuration.setText(dataFormatedTimer(millis));
 		ibPauseOrPlay.setImageResource(android.R.drawable.ic_media_pause);
 		openThread();
+		
+		
 	}
+	
+	
 	
 	private String dataFormatedTimer(int millis){
 		SimpleDateFormat sdf=new SimpleDateFormat("mm:ss",Locale.CHINA);
@@ -194,14 +260,17 @@ public class MainActivity extends Activity implements OnClickListener{
 				@Override
 				public void run() {
 					//更新进度条
-					sbProgress.setProgress(percent);
+					if(!isTracking){
+						sbProgress.setProgress(percent);
+					}
 					//更新时间
 					tvCurrentPosition.setText(dataFormatedTimer(currentPosition));
 				}
 			};
 			while(isRunning){
 				try {
-					currentPosition=player.getCurrentMusicIndex();
+					openNext();
+					currentPosition=player.getCurrentPosition();
 					int duration=player.getDuration();
 					percent=duration==0 ? 0:currentPosition*100/duration;
 					runOnUiThread(runnable);

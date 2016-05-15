@@ -10,5 +10,8 @@ public interface IMusicPlayer {
 	boolean isPlaying();
 	void play(int position);
 	int getCurrentMusicIndex();
+	boolean autoPlayNext();
+	void playFromCurrentPosition(int position);
+	
 	
 }

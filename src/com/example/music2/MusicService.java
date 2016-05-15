@@ -6,8 +6,10 @@ import java.util.List;
 import android.app.Service;
 import android.content.Intent;
 import android.media.MediaPlayer;
+import android.media.MediaPlayer.OnCompletionListener;
 import android.os.Binder;
 import android.os.IBinder;
+import android.util.Log;
 
 public class MusicService extends Service{
 	private MediaPlayer player;
@@ -25,7 +27,21 @@ public class MusicService extends Service{
 		//获得歌曲数据集合
 		app=(MusicPlayerApplication) getApplication();
 		musics=app.getMusics();
+		
+		player.setOnCompletionListener(new OnCompletionListener() {
+			
+			@Override
+			public void onCompletion(MediaPlayer mp) {
+				isEnding=true;
+				pauseposition=0;
+				next();
+			}
+		});
+		
+		Log.i("edu", "MusicService.onCreate");
 	}
+	
+	
 
 	@Override
 	public IBinder onBind(Intent intent) {
@@ -83,6 +99,16 @@ public class MusicService extends Service{
 			// TODO Auto-generated method stub
 			return currentMusicIndex;
 		}
+
+		@Override
+		public boolean autoPlayNext() {
+			return MusicService.this.autoPlayNext();
+		}
+
+		@Override
+		public void playFromCurrentPosition(int position) {
+			MusicService.this.playFromCurrentPosition(position);
+		}
 		
 	}
 	private void pause(){
@@ -139,7 +165,15 @@ public class MusicService extends Service{
 		play();
 	}
 	
+	private boolean isEnding;
+	private boolean autoPlayNext(){
+		 return isEnding;
+	}
 	
+	private void playFromCurrentPosition(int position){
+		pauseposition=position;
+		play();
+	}
 	
 	
 	
